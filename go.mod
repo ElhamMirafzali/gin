@@ -12,6 +12,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/stretchr/testify v1.8.3
 	github.com/ugorji/go/codec v1.2.11
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	golang.org/x/net v0.14.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -31,6 +32,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 )

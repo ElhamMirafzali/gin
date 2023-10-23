@@ -22,6 +22,7 @@ import (
 	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/gin-gonic/gin/render"
+	"golang.org/x/exp/slices"
 )
 
 // Content-Type MIME of the most common data formats.
@@ -484,6 +485,54 @@ func (c *Context) QueryMap(key string) (dicts map[string]string) {
 func (c *Context) GetQueryMap(key string) (map[string]string, bool) {
 	c.initQueryCache()
 	return c.get(c.queryCache, key)
+}
+
+// NestedQueryMap returns a map for a given query key, it supports nested query parameters.
+func (c *Context) NestedQueryMap(key string, notSeparableKeys []string) map[string]any {
+	var m map[string][]string = c.Request.URL.Query()
+	filterMap := make(map[string]any)
+	for k, v := range m {
+		if i := strings.IndexByte(k, '['); i >= 1 && k[0:i] == key {
+			if j := strings.IndexByte(k[i+1:], ']'); j >= 1 {
+				if slices.Contains(notSeparableKeys, k) {
+					filterMap[k[i+1:i+j+1]] = v[0]
+					continue
+				}
+				filterMap = extractMap(filterMap, k[i:], v).(map[string]any)
+			}
+		}
+	}
+
+	return filterMap
+}
+
+// extractMap is a recursive function which creates a map for our nested query parameters
+func extractMap(filterMap map[string]any, k string, v []string) any {
+	// This ends the recursion, if there's no more brackets, there's no more inner-maps to be created or keys to be added
+	if !strings.Contains(k, "[") {
+		// The value van be a []string
+		if strings.Contains(v[0], ",") {
+			return strings.Split(v[0], ",")
+		}
+		return v[0]
+	}
+	if i := strings.IndexByte(k, '['); i >= 0 {
+		if j := strings.IndexByte(k[i+1:], ']'); j >= 1 {
+			key := k[i+1:][:j]
+			restOfInput := k[i+1:][j+1:]
+
+			if _, ok := filterMap[key]; ok {
+				filterMap[key] = extractMap(filterMap[key].(map[string]any), restOfInput, v)
+			} else {
+				tmp := make(map[string]any)
+				filterMap[key] = extractMap(tmp, restOfInput, v)
+			}
+
+			return filterMap
+		}
+	}
+
+	return filterMap
 }
 
 // PostForm returns the specified key from a POST urlencoded form or multipart form
